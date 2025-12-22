@@ -9,6 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  provider: ^6.1.5+1
+  reorderable_grid_view: ^2.2.8
+  shared_preferences: ^2.5.4
 
 dev_dependencies:
   flutter_test:
