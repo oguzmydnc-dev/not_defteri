@@ -9,7 +9,7 @@ class GridBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomPaint(
       painter: _GridPainter(
-        color: Theme.of(context).dividerColor.withOpacity(0.15),
+        color: Theme.of(context).dividerColor.withValues(alpha: 0.15),
       ),
       child: child,
     );

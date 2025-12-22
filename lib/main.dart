@@ -117,13 +117,10 @@ class _NotListesiSayfasiState extends State<NotListesiSayfasi> {
       builder: (_) => NotDialog(not: provider.notlar[index]),
     );
 
-    if (!mounted) return;
+    if (!mounted || sonuc == null) return;
 
-    if (sonuc == null) {
-      provider.sil(index);
-    } else {
-      provider.guncelle(index, sonuc);
-    }
+    provider.guncelle(index, sonuc);
+
   }
 }
 
