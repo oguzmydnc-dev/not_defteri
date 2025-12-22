@@ -47,10 +47,12 @@ class NotKarti extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Text(
-                        not.icerik,
-                        maxLines: 6,
-                        overflow: TextOverflow.ellipsis,
+                      Expanded(
+                        child: Text(
+                          not.icerik,
+                          maxLines: 6,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
@@ -96,11 +98,13 @@ class NotKarti extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  not.icerik,
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 4),
+                Expanded(
+                  child: Text(
+                    not.icerik,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
