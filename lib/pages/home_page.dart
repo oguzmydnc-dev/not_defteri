@@ -68,6 +68,7 @@ class _HomePageState extends State<HomePage> {
 
                   return NoteOverlay(
                     note: note,
+                    selectionMode: selectionMode,
                     onClose: _closeNote,
                     onEdit: () async {
                       _closeNote();

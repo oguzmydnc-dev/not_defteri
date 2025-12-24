@@ -6,6 +6,7 @@ class NoteActionButton extends StatefulWidget {
   final String tooltip;
   final VoidCallback onPressed;
   final Color? color;
+  final bool disabled;
 
   const NoteActionButton({
     super.key,
@@ -13,6 +14,7 @@ class NoteActionButton extends StatefulWidget {
     required this.tooltip,
     required this.onPressed,
     this.color,
+    this.disabled = false,
   });
 
   @override
@@ -37,6 +39,7 @@ class _NoteActionButtonState extends State<NoteActionButton>
   }
 
   void _animate() async {
+    if (widget.disabled) return;
     await _controller.forward();
     _controller.reverse();
     widget.onPressed();
@@ -49,7 +52,7 @@ class _NoteActionButtonState extends State<NoteActionButton>
       child: IconButton(
         icon: Icon(widget.icon, color: widget.color),
         tooltip: widget.tooltip,
-        onPressed: _animate,
+        onPressed: widget.disabled ? null : _animate,
       ),
     );
   }

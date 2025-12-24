@@ -12,6 +12,7 @@ class NoteOverlay extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onTogglePin;
+  final bool selectionMode;
 
   const NoteOverlay({
     super.key,
@@ -20,6 +21,7 @@ class NoteOverlay extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onTogglePin,
+    this.selectionMode = false,
   });
 
   @override
@@ -75,11 +77,13 @@ class NoteOverlay extends StatelessWidget {
           icon: note.pinned ? Icons.push_pin : Icons.push_pin_outlined,
           tooltip: 'Pin',
           onPressed: onTogglePin,
+          disabled: selectionMode,
         ),
         NoteActionButton(
           icon: Icons.edit,
           tooltip: 'Edit',
           onPressed: onEdit,
+          disabled: selectionMode,
         ),
         NoteActionButton(
           icon: Icons.delete,
@@ -109,14 +113,16 @@ class NoteOverlay extends StatelessWidget {
                   false;
             }
 
-            if (confirmed) onDelete();
+            if (confirmed && !selectionMode) onDelete();
           },
           color: Colors.red,
+          disabled: selectionMode,
         ),
         NoteActionButton(
           icon: Icons.close,
           tooltip: 'Close',
           onPressed: onClose,
+          disabled: false,
         ),
       ],
     );
