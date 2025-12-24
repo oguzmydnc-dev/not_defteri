@@ -1,4 +1,15 @@
 // widgets/note_card.dart
+// A compact card widget that displays a single Note.
+//
+// Responsibilities:
+// - Render note title and preview content
+// - Show pinned indicator and selection state
+// - Support drag-and-drop reordering via LongPressDraggable + DragTarget
+// - Forward edit/select/move callbacks to the parent
+//
+// This file intentionally preserves original behavior; comments are added
+// to make the widget easier to understand for maintainers.
+
 import 'package:flutter/material.dart';
 import '../models/note_model.dart';
 
@@ -24,6 +35,9 @@ class NoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Use LongPressDraggable to allow reordering notes by long-pressing
+    // the card. While dragging we show a lightweight feedback Card and
+    // use a DragTarget to accept drops and call the provided onMove.
     return LongPressDraggable<int>(
       data: index,
       dragAnchorStrategy: pointerDragAnchorStrategy,
@@ -31,7 +45,11 @@ class NoteCard extends StatelessWidget {
       childWhenDragging: const SizedBox.shrink(),
       onDragCompleted: () {},
       child: DragTarget<int>(
+        // Only accept drops when not in selection mode and the dragged
+        // index is different from this card's index.
         onWillAcceptWithDetails: (details) => !selectionMode && details.data != index,
+        // When an item is dropped on this card, notify the parent
+        // via `onMove(fromIndex, toIndex)` so it can update ordering.
         onAcceptWithDetails: (details) => onMove(details.data, index),
         builder: (context, candidateData, rejectedData) {
           return Card(
@@ -51,6 +69,7 @@ class NoteCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Small pinned icon when note is pinned
                         if (note.pinned) const Icon(Icons.push_pin, size: 16),
                         Text(
                           note.title,
@@ -76,6 +95,7 @@ class NoteCard extends StatelessWidget {
                     Positioned(
                       right: 6,
                       bottom: 6,
+                      // Selection indicator shown in selection mode.
                       child: Icon(
                         isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
                         color: Colors.white,
