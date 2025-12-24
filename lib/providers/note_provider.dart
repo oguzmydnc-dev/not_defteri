@@ -3,24 +3,56 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/note_model.dart';
+import '../services/hive_service.dart';
 
 class NoteProvider extends ChangeNotifier {
-  static const _storageKey = 'notes_json';
+  NoteStorage _storage = getDefaultNoteStorage();
 
   final List<Note> _notes = [];
 
+  final Set<String> _folders = {};
+
   List<Note> get notes => List.unmodifiable(_notes);
+
+  /// Notes that are not archived (default view)
+  List<Note> get activeNotes => List.unmodifiable(_notes.where((n) => !n.archived));
+
+  /// Notes that are archived
+  List<Note> get archivedNotes => List.unmodifiable(_notes.where((n) => n.archived));
+
+  /// Persisted list of folder names (allows empty folders)
+  List<String> get folders => List.unmodifiable(_folders);
+
 
   /// Load notes from local storage
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString(_storageKey);
-    if (jsonString == null) return;
+    // Load notes using the configured storage backend
+    try {
+      final list = await _storage.loadNotesJson();
+      _notes
+        ..clear()
+        ..addAll(list.map((e) => Note.fromJson(e)));
+    } catch (_) {
+      _notes.clear();
+    }
 
-    final List decoded = jsonDecode(jsonString);
-    _notes
-      ..clear()
-      ..addAll(decoded.map((e) => Note.fromJson(e)));
+    // Load folders: prefer storage that supports folders (HiveService), otherwise SharedPreferences
+    try {
+      if (_storage is HiveService) {
+        final folders = await (_storage as HiveService).loadFolders();
+        _folders
+          ..clear()
+          ..addAll(folders);
+      } else {
+        final prefs = await SharedPreferences.getInstance();
+        final folderList = prefs.getStringList('note_folders') ?? <String>[];
+        _folders
+          ..clear()
+          ..addAll(folderList);
+      }
+    } catch (_) {
+      _folders.clear();
+    }
 
     _sort();
     notifyListeners();
@@ -28,9 +60,18 @@ class NoteProvider extends ChangeNotifier {
 
   /// Save notes to local storage
   Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = jsonEncode(_notes.map((n) => n.toJson()).toList());
-    await prefs.setString(_storageKey, jsonString);
+    try {
+      await _storage.saveNotesJson(_notes.map((n) => n.toJson()).toList());
+    } catch (_) {}
+
+    try {
+      if (_storage is HiveService) {
+        await (_storage as HiveService).saveFolders(_folders.toList());
+      } else {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setStringList('note_folders', _folders.toList());
+      }
+    } catch (_) {}
   }
 
   /// Add new note
@@ -84,6 +125,99 @@ class NoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Archive a note by id
+  void archiveNote(String id) {
+    final index = _notes.indexWhere((n) => n.id == id);
+    if (index == -1) return;
+
+    final note = _notes[index];
+    _notes[index] = note.copyWith(archived: true, updatedAt: DateTime.now());
+
+    _save();
+    notifyListeners();
+  }
+
+  /// Unarchive a note by id
+  void unarchiveNote(String id) {
+    final index = _notes.indexWhere((n) => n.id == id);
+    if (index == -1) return;
+
+    final note = _notes[index];
+    _notes[index] = note.copyWith(archived: false, updatedAt: DateTime.now());
+
+    _sort();
+    _save();
+    notifyListeners();
+  }
+
+  /// Move a note to a folder (or clear folder when null)
+  void moveToFolder(String id, String? folder) {
+    final index = _notes.indexWhere((n) => n.id == id);
+    if (index == -1) return;
+
+    final note = _notes[index];
+    _notes[index] = note.copyWith(folder: folder, updatedAt: DateTime.now());
+
+    // If assigning to a folder, ensure it exists in the folders set
+    if (folder != null && folder.trim().isNotEmpty) {
+      _folders.add(folder.trim());
+    }
+
+    _save();
+    notifyListeners();
+  }
+
+  /// Add a new folder name (no-op if exists or empty)
+  void addFolder(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+    if (_folders.contains(trimmed)) return;
+    _folders.add(trimmed);
+    _save();
+    notifyListeners();
+  }
+
+  /// Rename an existing folder and update notes that belonged to it
+  void renameFolder(String oldName, String newName) {
+    final o = oldName.trim();
+    final n = newName.trim();
+    if (o.isEmpty || n.isEmpty) return;
+    if (!_folders.contains(o)) return;
+    if (o == n) return;
+
+    for (var i = 0; i < _notes.length; i++) {
+      final note = _notes[i];
+      if (note.folder == o) {
+        _notes[i] = note.copyWith(folder: n, updatedAt: DateTime.now());
+      }
+    }
+
+    _folders.remove(o);
+    _folders.add(n);
+    _sort();
+    _save();
+    notifyListeners();
+  }
+
+  /// Delete a folder. Notes in the folder will be cleared (no folder).
+  void deleteFolder(String name) {
+    final n = name.trim();
+    if (n.isEmpty) return;
+    if (!_folders.contains(n)) return;
+
+    for (var i = 0; i < _notes.length; i++) {
+      final note = _notes[i];
+      if (note.folder == n) {
+        _notes[i] = note.copyWith(folder: null, updatedAt: DateTime.now());
+      }
+    }
+
+    _folders.remove(n);
+    _sort();
+    _save();
+    notifyListeners();
+  }
+
   /// Sort notes by pinned first
   void _sort() {
     _notes.sort((a, b) {
@@ -113,5 +247,19 @@ class NoteProvider extends ChangeNotifier {
 
     _save();
     notifyListeners();
+  }
+
+  /// Replace the underlying storage backend. Optionally migrate existing
+  /// SharedPreferences data into the new storage when `migrate` is true.
+  Future<void> replaceStorage(NoteStorage storage, {bool migrate = false}) async {
+    if (storage is HiveService) {
+      await storage.init();
+      if (migrate) {
+        await storage.migrateFromSharedPrefs();
+      }
+    }
+
+    _storage = storage;
+    await load();
   }
 }

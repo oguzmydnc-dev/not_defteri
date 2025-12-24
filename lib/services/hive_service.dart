@@ -8,6 +8,7 @@
 
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 /// Abstract storage interface for persisting notes as JSON-compatible maps.
 abstract class NoteStorage {
@@ -21,6 +22,7 @@ abstract class NoteStorage {
 /// Current default implementation: SharedPreferences-based storage.
 class SharedPrefsStorage implements NoteStorage {
   static const _storageKey = 'notes_json';
+  static const _foldersKey = 'note_folders';
 
   @override
   Future<List<Map<String, dynamic>>> loadNotesJson() async {
@@ -37,31 +39,84 @@ class SharedPrefsStorage implements NoteStorage {
     final jsonString = jsonEncode(notes);
     await prefs.setString(_storageKey, jsonString);
   }
+
+  Future<List<String>> loadFolders() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList(_foldersKey) ?? <String>[];
+  }
+
+  Future<void> saveFolders(List<String> folders) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_foldersKey, folders);
+  }
 }
 
-/// Hive-backed implementation (stub).
-///
-/// To migrate:
-/// 1. Add `hive` and `hive_flutter` to `pubspec.yaml`.
-/// 2. Register adapters for `Note` (or store raw maps) and open a Box.
-/// 3. Implement `loadNotesJson` / `saveNotesJson` using the Box API.
-///
-/// This stub keeps the method signatures so switching implementations
-/// in `NoteProvider` is straightforward and non-breaking.
+/// Hive-backed implementation.
 class HiveService implements NoteStorage {
-  HiveService() {
-    // Intentionally empty: implement initialization where you call this
-    // class from main() after calling `Hive.initFlutter()`.
+  static const _boxName = 'notes_box';
+  static const _notesKey = 'notes_json';
+  static const _foldersKey = 'note_folders';
+
+  Box<dynamic>? _box;
+
+  HiveService();
+
+  /// Initialize Hive and open the box. Call once before using this service.
+  Future<void> init() async {
+    await Hive.initFlutter();
+    _box = await Hive.openBox(_boxName);
   }
 
   @override
   Future<List<Map<String, dynamic>>> loadNotesJson() async {
-    throw UnimplementedError('HiveService.loadNotesJson is not implemented.');
+    if (_box == null) await init();
+    final raw = _box!.get(_notesKey);
+    if (raw == null) return [];
+    try {
+      final List list = raw as List;
+      return list.cast<Map<String, dynamic>>();
+    } catch (_) {
+      return [];
+    }
   }
 
   @override
   Future<void> saveNotesJson(List<Map<String, dynamic>> notes) async {
-    throw UnimplementedError('HiveService.saveNotesJson is not implemented.');
+    if (_box == null) await init();
+    await _box!.put(_notesKey, notes);
+  }
+
+  Future<List<String>> loadFolders() async {
+    if (_box == null) await init();
+    final raw = _box!.get(_foldersKey);
+    if (raw == null) return [];
+    try {
+      return (raw as List).cast<String>();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> saveFolders(List<String> folders) async {
+    if (_box == null) await init();
+    await _box!.put(_foldersKey, folders);
+  }
+
+  /// Migrate data from SharedPreferences (used by SharedPrefsStorage)
+  Future<void> migrateFromSharedPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(SharedPrefsStorage._storageKey);
+    List<Map<String, dynamic>> notes = [];
+    if (jsonString != null && jsonString.isNotEmpty) {
+      final decoded = jsonDecode(jsonString) as List;
+      notes = decoded.cast<Map<String, dynamic>>();
+    }
+
+    final folders = prefs.getStringList(SharedPrefsStorage._foldersKey) ?? <String>[];
+
+    await init();
+    await saveNotesJson(notes);
+    await saveFolders(folders);
   }
 }
 

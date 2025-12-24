@@ -12,6 +12,8 @@ class NoteOverlay extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onTogglePin;
+  final void Function(String? folder)? onMoveToFolder;
+  final VoidCallback? onArchive;
   final bool selectionMode;
 
   const NoteOverlay({
@@ -21,6 +23,8 @@ class NoteOverlay extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onTogglePin,
+    this.onArchive,
+    this.onMoveToFolder,
     this.selectionMode = false,
   });
 
@@ -116,6 +120,42 @@ class NoteOverlay extends StatelessWidget {
             if (confirmed && !selectionMode) onDelete();
           },
           color: Colors.red,
+          disabled: selectionMode,
+        ),
+        NoteActionButton(
+          icon: note.archived ? Icons.unarchive : Icons.archive,
+          tooltip: note.archived ? 'Unarchive' : 'Archive',
+          onPressed: () {
+            if (selectionMode) return;
+            if (onArchive != null) onArchive!();
+          },
+          disabled: selectionMode,
+        ),
+        NoteActionButton(
+          icon: Icons.folder_open,
+          tooltip: 'Move to folder',
+          onPressed: () async {
+            if (selectionMode) return;
+            final controller = TextEditingController(text: note.folder ?? '');
+            final result = await showDialog<String?>(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text('Move to folder'),
+                content: TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(hintText: 'Folder name (leave empty to clear)'),
+                ),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(context, null), child: const Text('Cancel')),
+                  TextButton(onPressed: () => Navigator.pop(context, ''), child: const Text('Clear')),
+                  TextButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('Save')),
+                ],
+              ),
+            );
+
+            if (result == null) return; // cancelled
+            if (onMoveToFolder != null) onMoveToFolder!(result.isEmpty ? null : result);
+          },
           disabled: selectionMode,
         ),
         NoteActionButton(

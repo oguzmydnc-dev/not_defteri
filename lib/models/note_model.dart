@@ -11,8 +11,10 @@ class Note {
   final bool pinned;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool archived;
+  final String? folder;
 
-  const Note({
+  Note({
     required this.id,
     required this.title,
     required this.content,
@@ -20,7 +22,9 @@ class Note {
     this.pinned = false,
     DateTime? createdAt,
     DateTime? updatedAt,
-  });
+    this.archived = false,
+    this.folder,
+  }) :
     createdAt = createdAt ?? DateTime.now(),
     updatedAt = updatedAt ?? DateTime.now();
 
@@ -32,6 +36,8 @@ class Note {
     bool pinned = false,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool archived = false,
+    String? folder,
   }) {
     return Note(
       id: const Uuid().v4(),
@@ -41,6 +47,8 @@ class Note {
       pinned: pinned,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      archived: archived,
+      folder: folder,
     );
   }
 
@@ -52,6 +60,8 @@ class Note {
     bool? pinned,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? archived,
+    String? folder,
   }) {
     return Note(
       id: id, // ID should never change
@@ -61,6 +71,8 @@ class Note {
       pinned: pinned ?? this.pinned,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      archived: archived ?? this.archived,
+      folder: folder ?? this.folder,
     );
   }
 
@@ -80,6 +92,8 @@ class Note {
       'pinned': pinned,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'archived': archived,
+      'folder': folder,
     };
   }
 
@@ -93,6 +107,8 @@ class Note {
       pinned: json['pinned'] ?? false,
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'] as String) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt'] as String) : null,
+      archived: json['archived'] ?? false,
+      folder: json['folder'] as String?,
     );
   }
 

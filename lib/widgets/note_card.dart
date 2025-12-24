@@ -121,7 +121,7 @@ class NoteCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.25),
+                        color: Colors.black.withValues(alpha: 0.25),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.drag_handle, size: 18, color: Colors.white70),
@@ -135,21 +135,5 @@ class NoteCard extends StatelessWidget {
     );
   }
 
-  Widget _dragFeedback() {
-    return Material(
-      color: Colors.transparent,
-      elevation: 10,
-      child: Card(
-        color: note.color,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const SizedBox(
-          width: 160,
-          height: 120,
-        ),
-      ),
-    );
-  }
 }
 
