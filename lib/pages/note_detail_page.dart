@@ -1,32 +1,32 @@
-// pages/not_detay_sayfasi.dart
+// pages/note_detail_page.dart
 import 'package:flutter/material.dart';
 import '../models/note_model.dart';
 
 /// Detailed note page with scrollable content
-class NotDetaySayfasi extends StatelessWidget {
-  final Not not;
+class NoteDetailPage extends StatelessWidget {
+  final Note note;
 
-  const NotDetaySayfasi({super.key, required this.not});
+  const NoteDetailPage({super.key, required this.note});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          not.baslik.isEmpty ? 'Note Detail' : not.baslik,
+          note.title.isEmpty ? 'Note Detail' : note.title,
           overflow: TextOverflow.ellipsis,
         ),
       ),
       body: Container(
-        color: not.renk.withOpacity(0.15),
+        color: note.color.withAlpha((0.15 * 255).round()),
         padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start, // Align left
             children: [
-              if (not.baslik.isNotEmpty)
+              if (note.title.isNotEmpty)
                 Text(
-                  not.baslik,
+                  note.title,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -34,7 +34,7 @@ class NotDetaySayfasi extends StatelessWidget {
                 ),
               const SizedBox(height: 16),
               Text(
-                not.icerik,
+                note.content,
                 style: const TextStyle(fontSize: 16, height: 1.4),
               ),
             ],

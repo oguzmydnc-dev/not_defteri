@@ -4,31 +4,31 @@ import 'package:provider/provider.dart';
 import '../models/note_model.dart';
 import '../providers/settings_provider.dart';
 
-enum NotDialogResultType { save, delete, cancel }
+enum NoteDialogResultType { save, delete, cancel }
 
-class NotDialogResult {
-  final NotDialogResultType type;
-  final Not? not;
+class NoteDialogResult {
+  final NoteDialogResultType type;
+  final Note? note;
 
-  NotDialogResult(this.type, [this.not]);
+  NoteDialogResult(this.type, [this.note]);
 }
 
-class NotDialog extends StatefulWidget {
-  final Not? not;
+class NoteDialog extends StatefulWidget {
+  final Note? note;
 
-  const NotDialog({super.key, this.not});
+  const NoteDialog({super.key, this.note});
 
   @override
-  State<NotDialog> createState() => _NotDialogState();
+  State<NoteDialog> createState() => _NoteDialogState();
 }
 
-class _NotDialogState extends State<NotDialog> {
-  late TextEditingController baslikCtrl;
-  late TextEditingController icerikCtrl;
-  late bool sabit;
-  late Color renk;
+class _NoteDialogState extends State<NoteDialog> {
+  late TextEditingController titleCtrl;
+  late TextEditingController contentCtrl;
+  late bool pinned;
+  late Color color;
 
-  final renkler = [
+  final colors = [
     Colors.yellow,
     Colors.red,
     Colors.green,
@@ -41,10 +41,10 @@ class _NotDialogState extends State<NotDialog> {
   @override
   void initState() {
     super.initState();
-    baslikCtrl = TextEditingController(text: widget.not?.baslik ?? '');
-    icerikCtrl = TextEditingController(text: widget.not?.icerik ?? '');
-    sabit = widget.not?.sabit ?? false;
-    renk = widget.not?.renk ?? Colors.yellow;
+    titleCtrl = TextEditingController(text: widget.note?.title ?? '');
+    contentCtrl = TextEditingController(text: widget.note?.content ?? '');
+    pinned = widget.note?.pinned ?? false;
+    color = widget.note?.color ?? Colors.yellow;
   }
 
   @override
@@ -53,17 +53,17 @@ class _NotDialogState extends State<NotDialog> {
         context.watch<SettingsProvider>().askBeforeDelete;
 
     return AlertDialog(
-      title: Text(widget.not == null ? 'New Note' : 'Edit Note'),
+      title: Text(widget.note == null ? 'New Note' : 'Edit Note'),
       content: SingleChildScrollView(
         child: Column(
           children: [
             TextField(
-              controller: baslikCtrl,
+              controller: titleCtrl,
               decoration: const InputDecoration(hintText: 'Title'),
             ),
             const SizedBox(height: 8),
             TextField(
-              controller: icerikCtrl,
+              controller: contentCtrl,
               decoration: const InputDecoration(hintText: 'Content'),
               maxLines: null,
             ),
@@ -71,19 +71,19 @@ class _NotDialogState extends State<NotDialog> {
               children: [
                 const Icon(Icons.push_pin),
                 Checkbox(
-                  value: sabit,
-                  onChanged: (v) => setState(() => sabit = v!),
+                  value: pinned,
+                  onChanged: (v) => setState(() => pinned = v!),
                 ),
               ],
             ),
             Wrap(
               spacing: 8,
-              children: renkler.map((r) {
+              children: colors.map((r) {
                 return GestureDetector(
-                  onTap: () => setState(() => renk = r),
+                  onTap: () => setState(() => color = r),
                   child: CircleAvatar(
                     backgroundColor: r,
-                    child: renk == r
+                    child: color == r
                         ? const Icon(Icons.check, color: Colors.white)
                         : null,
                   ),
@@ -99,14 +99,14 @@ class _NotDialogState extends State<NotDialog> {
           onPressed: () {
             Navigator.pop(
               context,
-              NotDialogResult(NotDialogResultType.cancel),
+              NoteDialogResult(NoteDialogResultType.cancel),
             );
           },
           child: const Text('Cancel'),
         ),
 
         // Delete only if editing existing note
-        if (widget.not != null)
+        if (widget.note != null)
           TextButton(
             onPressed: () async {
               bool confirmed = true;
@@ -119,7 +119,7 @@ class _NotDialogState extends State<NotDialog> {
 
               Navigator.pop(
                 context,
-                NotDialogResult(NotDialogResultType.delete),
+                NoteDialogResult(NoteDialogResultType.delete),
               );
             },
             child: const Text(
@@ -131,29 +131,29 @@ class _NotDialogState extends State<NotDialog> {
         // Save
         TextButton(
           onPressed: () {
-            final title = baslikCtrl.text.trim();
-            final content = icerikCtrl.text.trim();
+            final title = titleCtrl.text.trim();
+            final content = contentCtrl.text.trim();
 
             // Prevent saving empty note
             if (title.isEmpty || content.isEmpty) return;
 
-            final newNote = widget.not == null
-                ? Not.yeni(
-                    baslik: title,
-                    icerik: content,
-                    renk: renk,
-                    sabit: sabit,
+            final newNote = widget.note == null
+                ? Note.create(
+                    title: title,
+                    content: content,
+                    color: color,
+                    pinned: pinned,
                   )
-                : widget.not!.copyWith(
-                    baslik: title,
-                    icerik: content,
-                    renk: renk,
-                    sabit: sabit,
+                : widget.note!.copyWith(
+                    title: title,
+                    content: content,
+                    color: color,
+                    pinned: pinned,
                   );
 
             Navigator.pop(
               context,
-              NotDialogResult(NotDialogResultType.save, newNote),
+              NoteDialogResult(NoteDialogResultType.save, newNote),
             );
           },
           child: const Text('Save'),

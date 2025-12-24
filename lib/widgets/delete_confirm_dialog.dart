@@ -15,11 +15,11 @@ Future<bool> showDeleteConfirmDialog(BuildContext context) async {
         context: context,
         builder: (ctx) {
           return AlertDialog(
-            title: const Text('Not silinsin mi?'),
+            title: const Text('Delete note?'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Bu işlem geri alınamaz.'),
+                const Text('This action cannot be undone.'),
                 const SizedBox(height: 12),
                 StatefulBuilder(
                   builder: (_, setState) {
@@ -27,7 +27,7 @@ Future<bool> showDeleteConfirmDialog(BuildContext context) async {
                       contentPadding: EdgeInsets.zero,
                       value: dontAskAgain,
                       onChanged: (v) => setState(() => dontAskAgain = v!),
-                      title: const Text('Bunu bir daha sorma'),
+                      title: const Text("Don't ask again"),
                     );
                   },
                 ),
@@ -36,7 +36,7 @@ Future<bool> showDeleteConfirmDialog(BuildContext context) async {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Vazgeç'),
+                child: const Text('Cancel'),
               ),
               TextButton(
                 onPressed: () {
@@ -46,7 +46,7 @@ Future<bool> showDeleteConfirmDialog(BuildContext context) async {
                   Navigator.pop(ctx, true);
                 },
                 child: const Text(
-                  'Sil',
+                  'Delete',
                   style: TextStyle(color: Colors.red),
                 ),
               ),

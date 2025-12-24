@@ -4,115 +4,114 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/note_model.dart';
 
-class NotProvider extends ChangeNotifier {
-  static const _storageKey = 'notlar_json';
+class NoteProvider extends ChangeNotifier {
+  static const _storageKey = 'notes_json';
 
-  final List<Not> _notlar = [];
+  final List<Note> _notes = [];
 
-  List<Not> get notlar => List.unmodifiable(_notlar);
+  List<Note> get notes => List.unmodifiable(_notes);
 
   /// Load notes from local storage
-  Future<void> yukle() async {
+  Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString(_storageKey);
     if (jsonString == null) return;
 
     final List decoded = jsonDecode(jsonString);
-    _notlar
+    _notes
       ..clear()
-      ..addAll(decoded.map((e) => Not.fromJson(e)));
+      ..addAll(decoded.map((e) => Note.fromJson(e)));
 
-    _sirala();
+    _sort();
     notifyListeners();
   }
 
   /// Save notes to local storage
-  Future<void> _kaydet() async {
+  Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonString =
-        jsonEncode(_notlar.map((n) => n.toJson()).toList());
+    final jsonString = jsonEncode(_notes.map((n) => n.toJson()).toList());
     await prefs.setString(_storageKey, jsonString);
   }
 
   /// Add new note
-  void ekle(Not not) {
-    if (not.baslik.trim().isEmpty || not.icerik.trim().isEmpty) return;
+  void add(Note note) {
+    if (note.title.trim().isEmpty || note.content.trim().isEmpty) return;
 
-    _notlar.add(not);
-    _sirala();
-    _kaydet();
+    _notes.add(note);
+    _sort();
+    _save();
     notifyListeners();
   }
 
   /// Update existing note
-  void guncelle(Not guncel) {
-    if (guncel.baslik.trim().isEmpty || guncel.icerik.trim().isEmpty) return;
+  void update(Note updated) {
+    if (updated.title.trim().isEmpty || updated.content.trim().isEmpty) return;
 
-    final index = _notlar.indexWhere((n) => n.id == guncel.id);
+    final index = _notes.indexWhere((n) => n.id == updated.id);
     if (index == -1) return;
 
-    _notlar[index] = guncel;
-    _sirala();
-    _kaydet();
+    _notes[index] = updated;
+    _sort();
+    _save();
     notifyListeners();
   }
 
   /// Delete a note
-  void sil(String id) {
-    _notlar.removeWhere((n) => n.id == id);
-    _kaydet();
+  void delete(String id) {
+    _notes.removeWhere((n) => n.id == id);
+    _save();
     notifyListeners();
   }
 
-  Not? getById(String id) {
+  Note? getById(String id) {
     try {
-      return _notlar.firstWhere((n) => n.id == id);
+      return _notes.firstWhere((n) => n.id == id);
     } catch (_) {
       return null;
     }
   }
 
   /// Toggle pinned status
-  void toggleSabitle(String id) {
-    final index = _notlar.indexWhere((n) => n.id == id);
+  void togglePin(String id) {
+    final index = _notes.indexWhere((n) => n.id == id);
     if (index == -1) return;
 
-    final not = _notlar[index];
-    _notlar[index] = not.copyWith(sabit: !not.sabit);
+    final note = _notes[index];
+    _notes[index] = note.copyWith(pinned: !note.pinned);
 
-    _sirala();
-    _kaydet();
+    _sort();
+    _save();
     notifyListeners();
   }
 
   /// Sort notes by pinned first
-  void _sirala() {
-    _notlar.sort((a, b) {
-      if (a.sabit == b.sabit) return 0;
-      return a.sabit ? -1 : 1;
+  void _sort() {
+    _notes.sort((a, b) {
+      if (a.pinned == b.pinned) return 0;
+      return a.pinned ? -1 : 1;
     });
   }
 
   /// Reorder notes with safe pin handling
-  void yerDegistir({required String fromId, required String toId}) {
-    final fromIndex = _notlar.indexWhere((n) => n.id == fromId);
-    final toIndex = _notlar.indexWhere((n) => n.id == toId);
+  void reorder({required String fromId, required String toId}) {
+    final fromIndex = _notes.indexWhere((n) => n.id == fromId);
+    final toIndex = _notes.indexWhere((n) => n.id == toId);
 
     if (fromIndex == -1 || toIndex == -1) return;
 
-    final movingNote = _notlar[fromIndex];
-    if (movingNote.sabit) return;
+    final movingNote = _notes[fromIndex];
+    if (movingNote.pinned) return;
 
-    final sabitCount = _notlar.where((n) => n.sabit).length;
+    final pinnedCount = _notes.where((n) => n.pinned).length;
 
-    var newIndex = toIndex.clamp(sabitCount, _notlar.length - 1);
+    var newIndex = toIndex.clamp(pinnedCount, _notes.length - 1);
 
     if (fromIndex < newIndex) newIndex -= 1;
 
-    _notlar.removeAt(fromIndex);
-    _notlar.insert(newIndex, movingNote);
+    _notes.removeAt(fromIndex);
+    _notes.insert(newIndex, movingNote);
 
-    _kaydet();
+    _save();
     notifyListeners();
   }
 }

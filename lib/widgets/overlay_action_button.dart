@@ -41,12 +41,12 @@ class _OverlayActionButtonState extends State<OverlayActionButton> {
         duration: const Duration(milliseconds: 200),
         child: GestureDetector(
           onTap: widget.onTap,
-          child: Container(
+            child: Container(
             margin: const EdgeInsets.symmetric(vertical: 6),
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.6),
+              color: Colors.black.withAlpha((0.6 * 255).round()),
               shape: BoxShape.circle,
             ),
             child: Icon(

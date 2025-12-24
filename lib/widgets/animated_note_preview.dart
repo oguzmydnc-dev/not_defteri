@@ -4,13 +4,13 @@ import '../models/note_model.dart';
 /// Animated preview widget for dragging notes.
 /// Supports single and multiple selection.
 class AnimatedNotePreview extends StatelessWidget {
-  final Not not;
+  final Note note;
   final bool isSelected;
   final bool selectionMode;
 
   const AnimatedNotePreview({
     super.key,
-    required this.not,
+    required this.note,
     required this.isSelected,
     required this.selectionMode,
   });
@@ -21,7 +21,7 @@ class AnimatedNotePreview extends StatelessWidget {
       color: Colors.transparent,
       elevation: 10,
       child: Card(
-        color: not.renk,
+        color: note.color,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -32,10 +32,10 @@ class AnimatedNotePreview extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (not.sabit)
+              if (note.pinned)
                 const Icon(Icons.push_pin, size: 16),
               Text(
-                not.baslik,
+                note.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -46,7 +46,7 @@ class AnimatedNotePreview extends StatelessWidget {
               const SizedBox(height: 6),
               Expanded(
                 child: Text(
-                  not.icerik,
+                  note.content,
                   maxLines: 6,
                   overflow: TextOverflow.ellipsis,
                 ),

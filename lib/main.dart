@@ -19,17 +19,16 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => NotProvider()..yukle()),
+        ChangeNotifierProvider(create: (_) => NoteProvider()..load()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
       ],
-      child: const NotDefteriApp(),
+      child: const NotesApp(),
     ),
   );
 }
-
-class NotDefteriApp extends StatelessWidget {
-  const NotDefteriApp({super.key});
+class NotesApp extends StatelessWidget {
+  const NotesApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -38,19 +37,19 @@ class NotDefteriApp extends StatelessWidget {
       themeMode: context.watch<ThemeProvider>().mode,
       theme: ThemeData(brightness: Brightness.light),
       darkTheme: ThemeData(brightness: Brightness.dark),
-      home: const NotListesiSayfasi(),
+      home: const NoteListPage(),
     );
   }
 }
 
-class NotListesiSayfasi extends StatefulWidget {
-  const NotListesiSayfasi({super.key});
+class NoteListPage extends StatefulWidget {
+  const NoteListPage({super.key});
 
   @override
-  State<NotListesiSayfasi> createState() => _NotListesiSayfasiState();
+  State<NoteListPage> createState() => _NoteListPageState();
 }
 
-class _NotListesiSayfasiState extends State<NotListesiSayfasi> {
+class _NoteListPageState extends State<NoteListPage> {
   String? activeNoteId;
   final Set<String> selectedNoteIds = {};
 
@@ -67,8 +66,10 @@ class _NotListesiSayfasiState extends State<NotListesiSayfasi> {
 
   @override
   Widget build(BuildContext context) {
-    final notlar = context.watch<NotProvider>().notlar;
+    final notes = context.watch<NoteProvider>().notes;
 
+    // Using WillPopScope for compatibility; new PopScope API may differ.
+    // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: () async {
         if (selectionMode) {
@@ -86,30 +87,29 @@ class _NotListesiSayfasiState extends State<NotListesiSayfasi> {
         body: Stack(
           children: [
             const GridBackground(child: SizedBox.expand()),
-            _buildGrid(notlar),
+            _buildGrid(notes),
             if (activeNoteId != null)
               Builder(
                 builder: (ctx) {
-                  final not =
-                      context.read<NotProvider>().getById(activeNoteId!);
-                  if (not == null) return const SizedBox.shrink();
+                  final note = context.read<NoteProvider>().getById(activeNoteId!);
+                  if (note == null) return const SizedBox.shrink();
 
                   return NoteOverlay(
-                    not: not,
+                    note: note,
                     onClose: _closeNote,
                     onEdit: () async {
                       _closeNote();
 
-                      final result = await showGeneralDialog<NotDialogResult>(
+                      final result = await showGeneralDialog<NoteDialogResult>(
                         context: ctx,
                         barrierDismissible: true,
                         barrierLabel: 'Dismiss',
-                        pageBuilder: (_, __, ___) => NotDialog(not: not),
-                        transitionBuilder: (_, anim, __, child) {
+                        pageBuilder: (context, animation, secondaryAnimation) => NoteDialog(note: note),
+                        transitionBuilder: (context, animation, secondaryAnimation, child) {
                           return FadeTransition(
-                            opacity: anim,
+                            opacity: animation,
                             child: ScaleTransition(
-                              scale: anim,
+                              scale: animation,
                               child: child,
                             ),
                           );
@@ -118,21 +118,21 @@ class _NotListesiSayfasiState extends State<NotListesiSayfasi> {
 
                       if (!mounted || result == null) return;
 
-                      if (result.type == NotDialogResultType.save &&
-                          result.not != null) {
-                        context.read<NotProvider>().guncelle(result.not!);
+                      if (result.type == NoteDialogResultType.save &&
+                          result.note != null) {
+                        context.read<NoteProvider>().update(result.note!);
                       }
 
-                      if (result.type == NotDialogResultType.delete) {
-                        context.read<NotProvider>().sil(not.id);
+                      if (result.type == NoteDialogResultType.delete) {
+                        context.read<NoteProvider>().delete(note.id);
                       }
                     },
                     onDelete: () {
-                      context.read<NotProvider>().sil(not.id);
+                      context.read<NoteProvider>().delete(note.id);
                       _closeNote();
                     },
                     onTogglePin: () {
-                      context.read<NotProvider>().toggleSabitle(not.id);
+                      context.read<NoteProvider>().togglePin(note.id);
                     },
                   );
                 },
@@ -141,7 +141,7 @@ class _NotListesiSayfasiState extends State<NotListesiSayfasi> {
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: _yeniNotEkle,
+          onPressed: _addNewNote,
           child: const Icon(Icons.add),
         ),
       ),
@@ -156,9 +156,9 @@ class _NotListesiSayfasiState extends State<NotListesiSayfasi> {
               onPressed: () => setState(selectedNoteIds.clear),
             )
           : null,
-      title: selectionMode
+        title: selectionMode
           ? Text('${selectedNoteIds.length} selected')
-          : const Text('Not Defteri'),
+          : const Text('Notes'),
       actions: selectionMode
           ? []
           : [
@@ -174,7 +174,7 @@ class _NotListesiSayfasiState extends State<NotListesiSayfasi> {
     );
   }
 
-  Widget _buildGrid(List notlar) {
+  Widget _buildGrid(List notes) {
     return ReorderableGridView.builder(
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -183,34 +183,34 @@ class _NotListesiSayfasiState extends State<NotListesiSayfasi> {
         mainAxisSpacing: 12,
         childAspectRatio: 0.9,
       ),
-      itemCount: notlar.length,
+      itemCount: notes.length,
       onReorder: selectionMode
           ? (oldIndex, newIndex) {
-              context.read<NotProvider>().yerDegistir(
-                    fromId: notlar[oldIndex].id,
-                    toId: notlar[newIndex].id,
+              context.read<NoteProvider>().reorder(
+                    fromId: notes[oldIndex].id,
+                    toId: notes[newIndex].id,
                   );
             }
           : (_, _) {},
       itemBuilder: (context, index) {
-        final not = notlar[index];
-        return NotKarti(
-          key: ValueKey(not.id),
-          not: not,
+        final note = notes[index];
+        return NoteCard(
+          key: ValueKey(note.id),
+          note: note,
           index: index,
-          onEdit: () => _openNote(not.id),
+          onEdit: () => _openNote(note.id),
           onMove: (from, to) {
-            context.read<NotProvider>().yerDegistir(
-                  fromId: notlar[from].id,
-                  toId: notlar[to].id,
+            context.read<NoteProvider>().reorder(
+                  fromId: notes[from].id,
+                  toId: notes[to].id,
                 );
           },
           selectionMode: selectionMode,
-          isSelected: selectedNoteIds.contains(not.id),
+          isSelected: selectedNoteIds.contains(note.id),
           onSelectToggle: () {
             setState(() {
-              if (!selectedNoteIds.add(not.id)) {
-                selectedNoteIds.remove(not.id);
+              if (!selectedNoteIds.add(note.id)) {
+                selectedNoteIds.remove(note.id);
               }
             });
           },
@@ -229,7 +229,7 @@ class _NotListesiSayfasiState extends State<NotListesiSayfasi> {
           height: 56,
           padding: const EdgeInsets.symmetric(horizontal: 24),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.85),
+            color: Colors.black.withAlpha((0.85 * 255).round()),
             borderRadius: BorderRadius.circular(28),
           ),
           child: const Icon(Icons.delete, color: Colors.white),
@@ -244,17 +244,17 @@ class _NotListesiSayfasiState extends State<NotListesiSayfasi> {
     );
   }
 
-  Future<void> _yeniNotEkle() async {
-    final result = await showGeneralDialog<NotDialogResult>(
+  Future<void> _addNewNote() async {
+    final result = await showGeneralDialog<NoteDialogResult>(
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Dismiss',
-      pageBuilder: (_, __, ___) => const NotDialog(),
-      transitionBuilder: (_, anim, __, child) {
+      pageBuilder: (context, animation, secondaryAnimation) => const NoteDialog(),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(
-          opacity: anim,
+          opacity: animation,
           child: ScaleTransition(
-            scale: anim,
+            scale: animation,
             child: child,
           ),
         );
@@ -263,8 +263,8 @@ class _NotListesiSayfasiState extends State<NotListesiSayfasi> {
 
     if (!mounted || result == null) return;
 
-    if (result.type == NotDialogResultType.save && result.not != null) {
-      context.read<NotProvider>().ekle(result.not!);
+    if (result.type == NoteDialogResultType.save && result.note != null) {
+      context.read<NoteProvider>().add(result.note!);
     }
   }
 }

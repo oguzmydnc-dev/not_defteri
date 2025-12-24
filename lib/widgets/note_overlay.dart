@@ -7,7 +7,7 @@ import 'note_action_button.dart';
 import '../providers/settings_provider.dart';
 
 class NoteOverlay extends StatelessWidget {
-  final Not not;
+  final Note note;
   final VoidCallback onClose;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -15,7 +15,7 @@ class NoteOverlay extends StatelessWidget {
 
   const NoteOverlay({
     super.key,
-    required this.not,
+    required this.note,
     required this.onClose,
     required this.onEdit,
     required this.onDelete,
@@ -35,7 +35,7 @@ class NoteOverlay extends StatelessWidget {
         ),
         Center(
           child: Card(
-            color: not.renk,
+            color: note.color,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: ConstrainedBox(
               constraints: BoxConstraints(
@@ -50,13 +50,13 @@ class NoteOverlay extends StatelessWidget {
                   children: [
                     _header(context),
                     const SizedBox(height: 12),
-                    if (not.baslik.isNotEmpty)
+                    if (note.title.isNotEmpty)
                       Text(
-                        not.baslik,
+                        note.title,
                         style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                       ),
                     const SizedBox(height: 8),
-                    Text(not.icerik, style: const TextStyle(fontSize: 16)),
+                    Text(note.content, style: const TextStyle(fontSize: 16)),
                   ],
                 ),
               ),
@@ -72,7 +72,7 @@ class NoteOverlay extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         NoteActionButton(
-          icon: not.sabit ? Icons.push_pin : Icons.push_pin_outlined,
+          icon: note.pinned ? Icons.push_pin : Icons.push_pin_outlined,
           tooltip: 'Pin',
           onPressed: onTogglePin,
         ),

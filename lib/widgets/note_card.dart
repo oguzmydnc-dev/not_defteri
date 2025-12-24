@@ -1,9 +1,9 @@
-// widgets/not_karti.dart
+// widgets/note_card.dart
 import 'package:flutter/material.dart';
 import '../models/note_model.dart';
 
-class NotKarti extends StatelessWidget {
-  final Not not;
+class NoteCard extends StatelessWidget {
+  final Note note;
   final int index;
   final VoidCallback onEdit;
   final void Function(int from, int to) onMove;
@@ -11,9 +11,9 @@ class NotKarti extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onSelectToggle;
 
-  const NotKarti({
+  const NoteCard({
     super.key,
-    required this.not,
+    required this.note,
     required this.index,
     required this.onEdit,
     required this.onMove,
@@ -35,8 +35,8 @@ class NotKarti extends StatelessWidget {
         onAcceptWithDetails: (details) => onMove(details.data, index),
         builder: (context, candidateData, rejectedData) {
           return Card(
-            color: not.renk,
-            elevation: not.sabit ? 8 : 3,
+            color: note.color,
+            elevation: note.pinned ? 8 : 3,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -51,9 +51,9 @@ class NotKarti extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (not.sabit) const Icon(Icons.push_pin, size: 16),
+                        if (note.pinned) const Icon(Icons.push_pin, size: 16),
                         Text(
-                          not.baslik,
+                          note.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -64,7 +64,7 @@ class NotKarti extends StatelessWidget {
                         const SizedBox(height: 6),
                         Expanded(
                           child: Text(
-                            not.icerik,
+                            note.content,
                             maxLines: 6,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -72,12 +72,6 @@ class NotKarti extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (selectionMode && !not.sabit)
-                    Positioned(
-                      right: 4,
-                      top: 4,
-                      child: const Icon(Icons.drag_handle, size: 20),
-                    ),
                   if (selectionMode)
                     Positioned(
                       right: 6,
@@ -101,7 +95,7 @@ class NotKarti extends StatelessWidget {
       color: Colors.transparent,
       elevation: 10,
       child: Card(
-        color: not.renk,
+        color: note.color,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -113,3 +107,4 @@ class NotKarti extends StatelessWidget {
     );
   }
 }
+
