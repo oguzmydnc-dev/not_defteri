@@ -11,6 +11,7 @@
 // to make the widget easier to understand for maintainers.
 
 import 'package:flutter/material.dart';
+import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import '../models/note_model.dart';
 
 class NoteCard extends StatelessWidget {
@@ -43,136 +44,93 @@ class NoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use LongPressDraggable to allow reordering notes by long-pressing
-    // the card. While dragging we show a lightweight feedback Card and
-    // use a DragTarget to accept drops and call the provided onMove.
-    //
-    // Drag/drop notes behavior summary:
-    // - Drag starts on long press (LongPressDraggable). The draggable
-    //   `data` payload is the `index` so the parent can identify which
-    //   item moved.
-    // - While dragging, the original card is hidden (`childWhenDragging`).
-    // - Drop targets are implemented by wrapping the child in a
-    //   `DragTarget<int>` that accepts drops and calls `onMove(from,to)`.
-    // - This pattern keeps existing reordering logic intact and works
-    //   the same when `isMini` is true.
-    return LongPressDraggable<int>(
-      data: index,
-      dragAnchorStrategy: pointerDragAnchorStrategy,
-      feedback: _dragFeedback(),
-      childWhenDragging: const SizedBox.shrink(),
-      onDragCompleted: () {},
-      child: DragTarget<int>(
-        // Only accept drops when not in selection mode and the dragged
-        // index is different from this card's index.
-        onWillAcceptWithDetails: (details) => !selectionMode && details.data != index,
-        // When an item is dropped on this card, notify the parent
-        // via `onMove(fromIndex, toIndex)` so it can update ordering.
-        onAcceptWithDetails: (details) => onMove(details.data, index),
-        builder: (context, candidateData, rejectedData) {
-          return Card(
-            color: note.color,
-            elevation: note.pinned ? 8 : 3,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: InkWell(
-              onTap: selectionMode ? onSelectToggle : onEdit,
-              onLongPress: selectionMode ? null : onSelectToggle,
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(
-                children: [
-                  // Main content area. If `isMini` is true we intentionally
-                  // hide all textual elements (title, content) and instead
-                  // render a compact color preview. This keeps the layout
-                  // stable while conveying a compact preview of the note.
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: isMini
-                        ? SizedBox(
-                            height: 48,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                // Pinned icon still visible in mini mode to
-                                // indicate important notes.
-                                if (note.pinned) const Icon(Icons.push_pin, size: 14),
-                                // Spacer color block to visually represent
-                                // the note color in compact form.
-                                const SizedBox(width: 8),
-                                Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color: note.color,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: Colors.black12),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                // Drag handle: clearly indicates the card is
-                                // draggable in mini state. We show a small
-                                // handle icon and slightly increase opacity on hover
-                                // when supported by the platform.
-                                const Icon(Icons.drag_handle, size: 18, color: Colors.white70),
-                              ],
-                            ),
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Small pinned icon when note is pinned
-                              if (note.pinned) const Icon(Icons.push_pin, size: 16),
-                              Text(
-                                note.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Expanded(
-                                child: Text(
-                                  note.content,
-                                  maxLines: 6,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                  ),
-                  if (selectionMode)
-                    Positioned(
-                      right: 6,
-                      bottom: 6,
-                      // Selection indicator shown in selection mode.
-                      child: Icon(
-                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                        color: Colors.white,
+    // Use the ReorderableGridView's built-in drag mechanics instead of
+    // manually composing LongPressDraggable + DragTarget. The grid view
+    // handles reordering animation and gestures; we only expose a
+    // `ReorderableDragStartListener` affordance in mini mode so users
+    // clearly see how to drag items.
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeInOut,
+      child: Card(
+        color: note.color,
+        elevation: note.pinned ? 8 : 3,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: InkWell(
+          onTap: selectionMode ? onSelectToggle : onEdit,
+          onLongPress: selectionMode ? null : onSelectToggle,
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (note.pinned) const Icon(Icons.push_pin, size: 16),
+                    // In mini mode we DO NOT hide text; instead we use a
+                    // slightly more compact layout while preserving title
+                    // and content visibility per user request.
+                    Text(
+                      note.title,
+                      maxLines: isMini ? 1 : 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  // Visual affordance for draggable state. When not in
-                  // mini mode we don't show an explicit drag handle because
-                  // the card shows content; in mini mode the small handle
-                  // above acts as the affordance. Add a subtle overlay
-                  // when the card is a candidate drop target.
-                  if (candidateData.isNotEmpty)
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.blueAccent.withOpacity(0.6), width: 2),
+                    const SizedBox(height: 6),
+                    if (!isMini)
+                      Expanded(
+                        child: Text(
+                          note.content,
+                          maxLines: 6,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                      )
+                    else
+                      Text(
+                        note.content,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+              if (selectionMode)
+                Positioned(
+                  right: 6,
+                  bottom: 6,
+                  // Selection indicator shown in selection mode.
+                  child: Icon(
+                    isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                    color: Colors.white,
+                  ),
+                ),
+              // Drag handle visible in mini mode: use ReorderableDragStartListener
+              // so the parent ReorderableGridView starts the built-in drag.
+              if (isMini)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: ReorderableDragStartListener(
+                    index: index,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.25),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.drag_handle, size: 18, color: Colors.white70),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
