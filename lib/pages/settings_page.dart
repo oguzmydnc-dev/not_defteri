@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 
+// pages/settings_page.dart
+// Simple settings screen exposing application-level toggles.
+//
+// Currently provides:
+// - Ask before deleting notes (persisted via SettingsProvider)
+//
+// Keep this page minimal and focused. Additional settings can be
+// appended as new list tiles with the same pattern.
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
@@ -22,7 +30,9 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  // Toggle for asking before deleting notes
+  // Animated switch tile that toggles whether the app asks the user
+  // for confirmation before deleting notes. The value is stored in
+  // `SettingsProvider.setAskBeforeDelete` so it persists across sessions.
   Widget _buildAskBeforeDeleteTile(SettingsProvider settings) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 250),
