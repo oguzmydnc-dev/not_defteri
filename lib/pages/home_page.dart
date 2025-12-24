@@ -6,6 +6,8 @@ import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 
 import '../providers/note_provider.dart';
 import '../providers/theme_provider.dart';
+import '../services/voice_service.dart';
+import '../services/ai_service.dart';
 
 import '../widgets/note_card.dart';
 import '../widgets/note_dialog.dart';
@@ -24,6 +26,11 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String? activeNoteId;
   final Set<String> selectedNoteIds = {};
+  final TextEditingController _searchController = TextEditingController();
+  bool _searchActive = false;
+
+  final VoiceService _voiceService = VoiceService();
+  final AiService _aiService = AiService();
 
   bool get selectionMode => selectedNoteIds.isNotEmpty;
 
@@ -39,6 +46,13 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final notes = context.watch<NoteProvider>().notes;
+    final query = _searchController.text.trim();
+    final filteredNotes = query.isEmpty
+        ? notes
+        : notes.where((n) {
+            final q = query.toLowerCase();
+            return n.title.toLowerCase().contains(q) || n.content.toLowerCase().contains(q);
+          }).toList();
 
     // Using WillPopScope for compatibility; new PopScope API may differ.
     // ignore: deprecated_member_use
@@ -59,7 +73,7 @@ class _HomePageState extends State<HomePage> {
         body: Stack(
           children: [
             const GridBackground(child: SizedBox.expand()),
-            _buildGrid(notes),
+            _buildGrid(filteredNotes),
             if (activeNoteId != null)
               Builder(
                 builder: (ctx) {
@@ -129,12 +143,75 @@ class _HomePageState extends State<HomePage> {
               onPressed: () => setState(selectedNoteIds.clear),
             )
           : null,
-        title: selectionMode
+      // If selection mode is active show selected count, otherwise show
+      // either the title or a search field when search is toggled on.
+      title: selectionMode
           ? Text('${selectedNoteIds.length} selected')
-          : const Text('Notes'),
+          : (_searchActive
+              ? TextField(
+                  controller: _searchController,
+                  decoration: const InputDecoration(
+                    hintText: 'Search notes...',
+                    border: InputBorder.none,
+                  ),
+                  autofocus: true,
+                  onChanged: (_) => setState(() {}),
+                )
+              : const Text('Notes')),
       actions: selectionMode
           ? []
           : [
+              // Search toggle
+              IconButton(
+                icon: Icon(_searchActive ? Icons.close : Icons.search),
+                onPressed: () {
+                  setState(() {
+                    if (_searchActive) {
+                      _searchController.clear();
+                    }
+                    _searchActive = !_searchActive;
+                  });
+                },
+              ),
+              // Voice input (stubbed service)
+              IconButton(
+                icon: const Icon(Icons.mic),
+                onPressed: () async {
+                  final available = await _voiceService.isAvailable();
+                  if (!available) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Voice input not available')));
+                    return;
+                  }
+                  await _voiceService.startListening((text) {
+                    _searchController.text = text;
+                    setState(() {});
+                  });
+                },
+              ),
+              // AI helper (generates summary for active note)
+              IconButton(
+                icon: const Icon(Icons.smart_toy),
+                onPressed: () async {
+                  if (activeNoteId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Open a note to use AI')));
+                    return;
+                  }
+                  final note = context.read<NoteProvider>().getById(activeNoteId!);
+                  if (note == null) return;
+                  final result = await _aiService.summarize(note);
+                  if (!mounted) return;
+                  showDialog<void>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text('AI Summary'),
+                      content: Text(result),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+                      ],
+                    ),
+                  );
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.brightness_6),
                 onPressed: () => context.read<ThemeProvider>().toggleTheme(),
