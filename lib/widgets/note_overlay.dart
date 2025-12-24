@@ -134,6 +134,8 @@ class NoteOverlay extends StatelessWidget {
                     Text('Created: ${note.createdAt.toLocal()}'),
                     const SizedBox(height: 6),
                     Text('Updated: ${note.updatedAt.toLocal()}'),
+                    const SizedBox(height: 8),
+                    Text('ID: ${note.id}', style: const TextStyle(fontSize: 12)),
                   ],
                 ),
                 actions: [
