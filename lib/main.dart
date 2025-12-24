@@ -13,7 +13,7 @@ import 'widgets/note_dialog.dart';
 import 'widgets/grid_background.dart';
 import 'widgets/note_overlay.dart';
 
-import 'settings_page.dart';
+import 'pages/settings_page.dart';
 
 void main() {
   runApp(
