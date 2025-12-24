@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 
+/// Grid background for note lists.
 class GridBackground extends StatelessWidget {
-  final Widget child;
+  final Widget? child;
+  final Color? color;
+  final double step;
 
-  const GridBackground({super.key, required this.child});
+  const GridBackground({
+    super.key,
+    this.child,
+    this.color,
+    this.step = 24.0,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final gridColor = color ?? Theme.of(context).dividerColor.withAlpha((0.25 * 255).round());
     return CustomPaint(
-      painter: _GridPainter(
-        color: Theme.of(context).dividerColor.withValues(alpha: 0.15),
-      ),
+      painter: _GridPainter(color: gridColor, step: step),
       child: child,
     );
   }
@@ -18,15 +25,15 @@ class GridBackground extends StatelessWidget {
 
 class _GridPainter extends CustomPainter {
   final Color color;
+  final double step;
 
-  _GridPainter({required this.color});
+  _GridPainter({required this.color, required this.step});
 
   @override
   void paint(Canvas canvas, Size size) {
-    const step = 24.0;
     final paint = Paint()
       ..color = color
-      ..strokeWidth = 0.5;
+      ..strokeWidth = 0.8;
 
     for (double x = 0; x < size.width; x += step) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);

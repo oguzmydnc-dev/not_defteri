@@ -24,8 +24,7 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   Future<void> toggleTheme() async {
-    _mode =
-        _mode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    _mode = _mode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
