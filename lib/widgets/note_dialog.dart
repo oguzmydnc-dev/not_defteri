@@ -149,6 +149,7 @@ class _NoteDialogState extends State<NoteDialog> {
                     content: content,
                     color: color,
                     pinned: pinned,
+                    updatedAt: DateTime.now(),
                   );
 
             Navigator.pop(

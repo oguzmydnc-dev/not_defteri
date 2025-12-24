@@ -77,7 +77,7 @@ class NoteProvider extends ChangeNotifier {
     if (index == -1) return;
 
     final note = _notes[index];
-    _notes[index] = note.copyWith(pinned: !note.pinned);
+    _notes[index] = note.copyWith(pinned: !note.pinned, updatedAt: DateTime.now());
 
     _sort();
     _save();

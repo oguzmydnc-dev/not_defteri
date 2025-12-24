@@ -9,6 +9,8 @@ class Note {
   final String content;
   final Color color;
   final bool pinned;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   const Note({
     required this.id,
@@ -16,7 +18,11 @@ class Note {
     required this.content,
     this.color = Colors.yellow,
     this.pinned = false,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   });
+    createdAt = createdAt ?? DateTime.now(),
+    updatedAt = updatedAt ?? DateTime.now();
 
   /// Factory for creating a new note
   factory Note.create({
@@ -24,6 +30,8 @@ class Note {
     required String content,
     Color color = Colors.yellow,
     bool pinned = false,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return Note(
       id: const Uuid().v4(),
@@ -31,6 +39,8 @@ class Note {
       content: content,
       color: color,
       pinned: pinned,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 
@@ -40,6 +50,8 @@ class Note {
     String? content,
     Color? color,
     bool? pinned,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return Note(
       id: id, // ID should never change
@@ -47,6 +59,8 @@ class Note {
       content: content ?? this.content,
       color: color ?? this.color,
       pinned: pinned ?? this.pinned,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -64,6 +78,8 @@ class Note {
         ((color.b * 255.0).round().clamp(0, 255))
       ),
       'pinned': pinned,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 
@@ -75,6 +91,8 @@ class Note {
       content: json['content'] as String,
       color: Color(json['color'] as int),
       pinned: json['pinned'] ?? false,
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'] as String) : null,
+      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt'] as String) : null,
     );
   }
 

@@ -119,6 +119,32 @@ class NoteOverlay extends StatelessWidget {
           disabled: selectionMode,
         ),
         NoteActionButton(
+          icon: Icons.info_outline,
+          tooltip: 'Details',
+          onPressed: () {
+            // Show metadata dialog
+            showDialog<void>(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text('Note Details'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Created: ${note.createdAt.toLocal()}'),
+                    const SizedBox(height: 6),
+                    Text('Updated: ${note.updatedAt.toLocal()}'),
+                  ],
+                ),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+                ],
+              ),
+            );
+          },
+          disabled: selectionMode,
+        ),
+        NoteActionButton(
           icon: Icons.close,
           tooltip: 'Close',
           onPressed: onClose,

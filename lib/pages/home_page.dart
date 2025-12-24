@@ -129,7 +129,7 @@ class _HomePageState extends State<HomePage> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: _addNewNote,
-          child: const Icon(Icons.add),
+          child: const Text('+', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         ),
       ),
     );
@@ -282,7 +282,25 @@ class _HomePageState extends State<HomePage> {
             color: Colors.black.withAlpha((0.85 * 255).round()),
             borderRadius: BorderRadius.circular(28),
           ),
-          child: const Icon(Icons.delete, color: Colors.white),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextButton.icon(
+                onPressed: () async {
+                  // Confirm bulk delete
+                  final confirmed = await showDeleteConfirmDialog(context);
+                  if (!confirmed) return;
+                  final provider = context.read<NoteProvider>();
+                  for (final id in selectedNoteIds.toList()) {
+                    provider.delete(id);
+                  }
+                  setState(() => selectedNoteIds.clear());
+                },
+                icon: const Icon(Icons.delete, color: Colors.white),
+                label: Text('${selectedNoteIds.length} Delete', style: const TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
         ),
       ),
     );
