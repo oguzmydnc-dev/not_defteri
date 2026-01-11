@@ -1,9 +1,14 @@
-// services/ai_service.dart
-// Small AI integration stub with placeholders for future implementation.
-// Implement actual API calls or on-device models as needed.
+// data/datasources/ai_service.dart
+// AI integration service for Memind app
+// This is a stub for future AI-powered features (e.g., note summarization).
+//
+// Author: [Your Name]
+// Date: 2026-01-11
 
-import '../domain/models/note.dart';
+import '../../domain/models/note.dart';
 
+/// Service for AI-powered features (e.g., summarization).
+/// Replace with actual API calls or on-device models as needed.
 class AiService {
   AiService();
 

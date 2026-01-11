@@ -7,7 +7,7 @@
 // - This is a read-only detail view; editing is handled elsewhere.
 
 import 'package:flutter/material.dart';
-import '../models/note_model.dart';
+import '../domain/models/note.dart';
 
 /// Detailed note page with scrollable content.
 class NoteDetailPage extends StatelessWidget {
@@ -18,7 +18,7 @@ class NoteDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Compose a subtle background color using the note's color with low alpha.
-    final backgroundColor = note.color.withAlpha((0.15 * 255).round());
+    final backgroundColor = Color(note.color).withOpacity(0.15);
 
     return Scaffold(
       appBar: AppBar(

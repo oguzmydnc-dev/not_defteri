@@ -2,7 +2,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/note_model.dart';
+import '../domain/models/note.dart';
 import 'note_action_button.dart';
 import '../providers/settings_provider.dart';
 
@@ -41,7 +41,7 @@ class NoteOverlay extends StatelessWidget {
         ),
         Center(
           child: Card(
-            color: note.color,
+            color: Color(note.color),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: ConstrainedBox(
               constraints: BoxConstraints(

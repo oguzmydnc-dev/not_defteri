@@ -22,63 +22,46 @@ class GridBackground extends StatelessWidget {
     final settings = context.watch<SettingsProvider>();
     final gridColor = color ?? Theme.of(context).dividerColor.withAlpha((0.25 * 255).round());
 
-    // If user selected a custom image, attempt to render it behind the grid.
-    if (settings.backgroundType == 'image' && (settings.backgroundPath?.isNotEmpty ?? false)) {
-      final path = settings.backgroundPath!;
+    // Validate image path before using as background
+    final String? path = (settings.backgroundType == 'image' && (settings.backgroundPath?.isNotEmpty ?? false))
+        ? settings.backgroundPath
+        : null;
 
-      Widget imageWidget() {
-        if (path.startsWith('http://') || path.startsWith('https://')) {
-          return Image.network(
+    Widget? backgroundImage;
+    if (path != null) {
+      if (path.startsWith('http://') || path.startsWith('https://')) {
+        // Only use network image if the URL is valid (basic check)
+        final uri = Uri.tryParse(path);
+        if (uri != null && (uri.isScheme('http') || uri.isScheme('https'))) {
+          backgroundImage = Image.network(
             path,
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return const Center(child: CircularProgressIndicator());
-            },
-            errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 48)),
+            errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
           );
         }
-
-        if (!kIsWeb) {
-          final file = File(path);
-          if (file.existsSync()) {
-            return Image.file(
-              file,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
-              errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 48)),
-            );
-          }
+      } else if (!kIsWeb) {
+        // Only use file image if the file exists
+        final file = File(path);
+        if (file.existsSync()) {
+          backgroundImage = Image.file(
+            file,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+          );
         }
-
-        // Fallback attempt: try network; will display errorBuilder if invalid.
-        return Image.network(
-          path,
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return const Center(child: CircularProgressIndicator());
-          },
-          errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 48)),
-        );
       }
-
-      return Stack(
-        children: [
-          Positioned.fill(child: imageWidget()),
-          CustomPaint(painter: _GridPainter(color: gridColor, step: step), child: child),
-        ],
-      );
     }
 
-    return CustomPaint(
-      painter: _GridPainter(color: gridColor, step: step),
-      child: child,
+    // If a valid image is available, use it; otherwise, just show the grid
+    return Stack(
+      children: [
+        if (backgroundImage != null) Positioned.fill(child: backgroundImage),
+        CustomPaint(painter: _GridPainter(color: gridColor, step: step), child: child),
+      ],
     );
   }
 }

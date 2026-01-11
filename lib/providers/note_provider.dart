@@ -2,7 +2,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/note_model.dart';
+import '../domain/models/note.dart';
 import '../services/hive_service.dart';
 
 class NoteProvider extends ChangeNotifier {

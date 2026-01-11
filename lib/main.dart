@@ -14,15 +14,24 @@ import 'widgets/grid_background.dart';
 import 'widgets/note_overlay.dart';
 
 import 'pages/settings_page.dart';
+
+import 'localization/language_manager.dart';
+import 'localization/language_keys.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'pages/home_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await LanguageManager.instance.init();
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => NoteProvider()..load()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider<LanguageManager>.value(value: LanguageManager.instance),
       ],
       child: const NotesApp(),
     ),
@@ -33,12 +42,17 @@ class NotesApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      themeMode: context.watch<ThemeProvider>().mode,
-      theme: ThemeData(brightness: Brightness.light),
-      darkTheme: ThemeData(brightness: Brightness.dark),
-      home: const HomePage(),
+    // Use Consumer to listen for language changes and rebuild MaterialApp instantly
+    return Consumer<LanguageManager>(
+      builder: (context, langManager, _) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          themeMode: context.watch<ThemeProvider>().mode,
+          theme: ThemeData(brightness: Brightness.light),
+          darkTheme: ThemeData(brightness: Brightness.dark),
+          home: const HomePage(),
+        );
+      },
     );
   }
 }

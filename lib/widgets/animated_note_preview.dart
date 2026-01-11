@@ -1,5 +1,8 @@
+// This widget currently has no hardcoded text. If you add any UI text, use:
+//   LanguageManager.instance.t(LangKey.key)
+// for localization.
 import 'package:flutter/material.dart';
-import '../models/note_model.dart';
+import '../domain/models/note.dart';
 
 /// Animated preview widget for dragging notes.
 /// Supports single and multiple selection.
@@ -21,7 +24,7 @@ class AnimatedNotePreview extends StatelessWidget {
       color: Colors.transparent,
       elevation: 10,
       child: Card(
-        color: note.color,
+        color: Color(note.color),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),

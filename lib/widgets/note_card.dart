@@ -10,10 +10,26 @@
 // This file intentionally preserves original behavior; comments are added
 // to make the widget easier to understand for maintainers.
 
+
 import 'package:flutter/material.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
-import '../models/note_model.dart';
+import '../domain/models/note.dart';
 
+
+/// A pure presentational widget that displays a single Note as a card.
+///
+/// This widget contains NO business or state logic. All state and callbacks
+/// must be provided by the parent. It is fully reusable and only renders UI.
+///
+/// Parameters:
+///   - [note]: The note to display (required)
+///   - [index]: The index of the note in the list/grid (required)
+///   - [onEdit]: Called when the card is tapped in non-selection mode
+///   - [onMove]: Called when the card is reordered (drag & drop)
+///   - [selectionMode]: If true, shows selection UI and toggles selection on tap
+///   - [isSelected]: If true, shows the card as selected
+///   - [onSelectToggle]: Called when selection is toggled
+///   - [isMini]: If true, renders a compact preview (for gallery/grid)
 class NoteCard extends StatelessWidget {
   final Note note;
   final int index;
@@ -22,12 +38,6 @@ class NoteCard extends StatelessWidget {
   final bool selectionMode;
   final bool isSelected;
   final VoidCallback onSelectToggle;
-  // When `isMini` is true the card renders in a compact "mini" preview
-  // state. In mini state we hide all textual content (title/snippet)
-  // and only show a color/shape preview. This is useful for gallery
-  // previews, widgets, or compact UIs. Drag & drop behavior remains
-  // supported in both normal and mini modes; when mini the UI shows a
-  // small drag handle to clearly indicate the card is draggable.
   final bool isMini;
 
   const NoteCard({
@@ -44,16 +54,12 @@ class NoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use the ReorderableGridView's built-in drag mechanics instead of
-    // manually composing LongPressDraggable + DragTarget. The grid view
-    // handles reordering animation and gestures; we only expose a
-    // `ReorderableDragStartListener` affordance in mini mode so users
-    // clearly see how to drag items.
+    // Animated card for smooth UI transitions
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeInOut,
       child: Card(
-        color: note.color,
+        color: Color(note.color), // ARGB int to Color
         elevation: note.pinned ? 8 : 3,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -69,10 +75,9 @@ class NoteCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Show pin icon if note is pinned
                     if (note.pinned) const Icon(Icons.push_pin, size: 16),
-                    // In mini mode we DO NOT hide text; instead we use a
-                    // slightly more compact layout while preserving title
-                    // and content visibility per user request.
+                    // Title (compact in mini mode)
                     Text(
                       note.title,
                       maxLines: isMini ? 1 : 2,
@@ -83,6 +88,7 @@ class NoteCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
+                    // Content preview (shorter in mini mode)
                     if (!isMini)
                       Expanded(
                         child: Text(
@@ -100,18 +106,17 @@ class NoteCard extends StatelessWidget {
                   ],
                 ),
               ),
+              // Selection indicator (only in selection mode)
               if (selectionMode)
                 Positioned(
                   right: 6,
                   bottom: 6,
-                  // Selection indicator shown in selection mode.
                   child: Icon(
                     isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
                     color: Colors.white,
                   ),
                 ),
-              // Drag handle visible in mini mode: use ReorderableDragStartListener
-              // so the parent ReorderableGridView starts the built-in drag.
+              // Drag handle (mini mode only)
               if (isMini)
                 Positioned(
                   right: 8,
@@ -121,7 +126,7 @@ class NoteCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.25),
+                        color: Colors.black.withOpacity(0.25),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.drag_handle, size: 18, color: Colors.white70),

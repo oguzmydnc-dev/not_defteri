@@ -1,7 +1,7 @@
 // widgets/not_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/note_model.dart';
+import '../domain/models/note.dart';
 import '../providers/settings_provider.dart';
 
 enum NoteDialogResultType { save, delete, cancel }
@@ -44,7 +44,7 @@ class _NoteDialogState extends State<NoteDialog> {
     titleCtrl = TextEditingController(text: widget.note?.title ?? '');
     contentCtrl = TextEditingController(text: widget.note?.content ?? '');
     pinned = widget.note?.pinned ?? false;
-    color = widget.note?.color ?? Colors.yellow;
+    color = widget.note != null ? Color(widget.note!.color) : const Color(0xFFFFFF00); // Default yellow
   }
 
   @override
@@ -83,7 +83,7 @@ class _NoteDialogState extends State<NoteDialog> {
                   onTap: () => setState(() => color = r),
                   child: CircleAvatar(
                     backgroundColor: r,
-                    child: color == r
+                    child: color.value == r.value
                         ? const Icon(Icons.check, color: Colors.white)
                         : null,
                   ),
@@ -141,13 +141,13 @@ class _NoteDialogState extends State<NoteDialog> {
                 ? Note.create(
                     title: title,
                     content: content,
-                    color: color,
+                    color: color.value,
                     pinned: pinned,
                   )
                 : widget.note!.copyWith(
                     title: title,
                     content: content,
-                    color: color,
+                    color: color.value,
                     pinned: pinned,
                     updatedAt: DateTime.now(),
                   );
